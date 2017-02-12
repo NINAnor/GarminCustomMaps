@@ -1,0 +1,5 @@
+<RCC>
+    <qresource prefix="/plugins/GarminCustomMap" >
+        <file>gcm_icon.png</file>
+    </qresource>
+</RCC>

@@ -1,0 +1,39 @@
+# This file contains metadata for your plugin. Since 
+# version 2.0 of QGIS this is the proper way to supply 
+# information about a plugin. The old method of 
+# embedding metadata in __init__.py will 
+# is no longer supported since version 2.0.
+
+# This file should be included when you package your plugin.# Mandatory items:
+
+[general]
+name=GarminCustomMap
+qgisMinimumVersion=2.0
+description=Export the current map canvas to a Garmin Custom Map (.kmz-file)
+version=1.2
+author=Stefan Blumentrath - Norwegian Institute for Nature Research (NINA)
+email=stefan.blumentrath@nina.no
+
+about=The GarminCustomMap plugin exports the current map canvas to a .kmz-file, which is compatible with Garmin`s Custom Maps format for handheld GPS units. That way individual maps styled in QGIS can be used as background (raster) maps on the compatible Garmin GPS units, like Alpha, Astro, Dakota, Oregon, Colorado, GPSMAP 62 series, GPSMAP 64 series, GPSMAP 78 series, Edge 800, Montana, Rino, eTrex® 20 and 30.
+
+tracker=https://github.com/NINAnor/GarminCustomMaps/issues
+repository=https://github.com/NINAnor/GarminCustomMaps/issues
+# End of mandatory metadata
+
+# Recommended items:
+
+# Uncomment the following line and add your changelog:
+changelog=Fix Unicode error in reprojection;Fixes for #11901, #12173, Improved help and setting hints for Units with the new 500 tiles limit
+
+# Tags are comma separated with spaces allowed
+tags=gps,kmz,garmin
+
+homepage=http://hub.qgis.org/projects/garmincustommap
+category=Plugins
+icon=gcm_icon.png
+# experimental flag
+experimental=False
+
+# deprecated flag (applies to the whole plugin, not just a single version)
+deprecated=False
+
