@@ -1,0 +1,2 @@
+# GarminCustomMaps
+The GarminCustomMap plugin exports the current map canvas to a .kmz-file, which is compatible with Garmin`s Custom Maps format for handheld GPS units. That way individual maps styled in QGIS can be used as background (raster) maps on the compatible Garmin GPS units, like Alpha, Astro, Dakota, Oregon, Colorado, GPSMAP 62 series, GPSMAP 64 series, GPSMAP 78 series, Edge 800, Montana, Rino, eTrex® 20 and 30.
