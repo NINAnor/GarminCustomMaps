@@ -197,8 +197,8 @@ class GarminCustomMap:
         del self.toolbar
 
     def cleanUp(self):
-        # Reset mapRenderer
-        mapRenderer.setOutputSize(QSize(old_width, old_height), old_dpi)
+        # Reset mapSettings
+        mapSettings.setOutputSize(QSize(old_width, old_height), old_dpi)
 
         if os.path.exists(out_put + ".png") :
             os.remove(out_put + ".png")
@@ -237,16 +237,16 @@ class GarminCustomMap:
             # Get mapCanvas and mapRenderer variables
             canvas = self.iface.mapCanvas()
             scale = canvas.scale()
-            mapRenderer = canvas.mapRenderer()
-            mapRect = mapRenderer.extent()
-            width = mapRenderer.width()
-            height = mapRenderer.height()
-            srs = mapRenderer.destinationCrs()
+            mapSettings = canvas.mapSettings()
+            mapRect = mapSettings.extent()
+            width = int(round(mapSettings.outputSize().width()))
+            height = int(round(mapSettings.outputSize().height()))
+            srs = mapSettings.destinationCrs()
             SourceCRS = str(srs.authid())
             # Save settings for resetting the mapRenderer after GCM production
-            old_width = mapRenderer.width()
-            old_height = mapRenderer.height()
-            old_dpi = mapRenderer.outputDpi()
+            old_width = mapSettings.outputSize().width()
+            old_height = mapSettings.outputSize().height()
+            old_dpi = mapSettings.outputDpi()
             # Give information about project projection, mapCanvas size and Custom map settings
             if (height * width) % (1024.0 * 1024.0) >= 1:
                 expected_tile_n_unzoomed = int((height * width) / (1024.0 * 1024.0)) + 1
@@ -334,11 +334,12 @@ class GarminCustomMap:
 
                 tname = in_file
                 # Set QGIS objects
-                target_dpi = int(round(zoom * mapRenderer.outputDpi()))
+                target_dpi = int(round(zoom * mapSettings.outputDpi()))
                 # Initialise temporary output image
                 x, y = 0, 0
-                width = int(round(mapRenderer.width() * zoom))
-                height = int(round(mapRenderer.height() * zoom))
+                width = int(round(mapSettings.outputSize().width() * zoom))
+                height = int(round(mapSettings.outputSize().width() * zoom))
+                mapSettings.setOutputSize(QSize(width, height))
 
                 # create output image and initialize it
                 image = QImage(QSize(width, height), QImage.Format_RGB555)
@@ -346,9 +347,12 @@ class GarminCustomMap:
 
                 # adjust map canvas (renderer) to the image size and render
                 imagePainter = QPainter(image)
-                mapRenderer.setOutputSize(QSize(width, height), target_dpi)
-                mapRenderer.render(imagePainter)
+                imagePainter.begin(image)
+                mapRenderer = QgsMapRendererCustomPainterJob(mapSettings, imagePainter)
+                mapRenderer.start()
+                mapRenderer.waitForFinished()
                 imagePainter.end()
+
 
                 # Save the image
                 image.save(input_file, "png")
@@ -368,8 +372,8 @@ class GarminCustomMap:
                 # Close dataset
                 input_dataset = None
 
-                # Reset mapRenderer to old size (monitor)
-                mapRenderer.setOutputSize(QSize(old_width, old_height), old_dpi)
+                # Reset mapSettings to old size (monitor)
+                mapSettings.setOutputSize(QSize(old_width, old_height))
 
                 # Warp the exported image to WGS84 if necessary
                 if SourceCRS != 'EPSG:4326':
@@ -381,8 +385,10 @@ class GarminCustomMap:
                     driver.Register()
                     # Define input CRS
                     in_CRS = srs.toWkt().encode('UTF-8')
+                    # print type(in_CRS)
                     # Define output CRS
                     out_CRS = QgsCoordinateReferenceSystem(4326, QgsCoordinateReferenceSystem.EpsgCrsId).toWkt().encode('UTF-8')
+                    # print type(out_CRS)
                     # Open input dataset
                     input_dataset = gdal.Open(input_file)
 
