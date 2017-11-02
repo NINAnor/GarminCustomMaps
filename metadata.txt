@@ -10,7 +10,7 @@
 name=GarminCustomMap
 qgisMinimumVersion=2.0
 description=Export the current map canvas to a Garmin Custom Map (.kmz-file)
-version=1.2
+version=1.2.1
 author=Stefan Blumentrath - Norwegian Institute for Nature Research (NINA)
 email=stefan.blumentrath@nina.no
 
@@ -23,7 +23,7 @@ repository=https://github.com/NINAnor/GarminCustomMaps/issues
 # Recommended items:
 
 # Uncomment the following line and add your changelog:
-changelog=Fix Unicode error in reprojection;Fixes for #11901, #12173, Improved help and setting hints for Units with the new 500 tiles limit
+changelog=Replace mapRenderer with mapSettings;Fix Unicode error in reprojection;Fixes for #11901, #12173, Improved help and setting hints for Units with the new 500 tiles limit
 
 # Tags are comma separated with spaces allowed
 tags=gps,kmz,garmin
