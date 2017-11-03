@@ -338,7 +338,7 @@ class GarminCustomMap:
                 # Initialise temporary output image
                 x, y = 0, 0
                 width = int(round(mapSettings.outputSize().width() * zoom))
-                height = int(round(mapSettings.outputSize().width() * zoom))
+                height = int(round(mapSettings.outputSize().height() * zoom))
                 mapSettings.setOutputSize(QSize(width, height))
 
                 # create output image and initialize it
