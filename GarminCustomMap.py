@@ -238,7 +238,7 @@ class GarminCustomMap:
             canvas = self.iface.mapCanvas()
             scale = canvas.scale()
             mapSettings = canvas.mapSettings()
-            mapRect = mapSettings.extent()
+            mapRect = canvas.extent()
             width = int(round(mapSettings.outputSize().width()))
             height = int(round(mapSettings.outputSize().height()))
             srs = mapSettings.destinationCrs()
@@ -337,9 +337,12 @@ class GarminCustomMap:
                 target_dpi = int(round(zoom * mapSettings.outputDpi()))
                 # Initialise temporary output image
                 x, y = 0, 0
-                width = int(round(mapSettings.outputSize().width() * zoom))
-                height = int(round(mapSettings.outputSize().height() * zoom))
+                width = mapSettings.outputSize().width() * zoom
+                height = mapSettings.outputSize().height() * zoom
                 mapSettings.setOutputSize(QSize(width, height))
+                mapSettings.setOutputDpi(target_dpi)
+                mapSettings.setExtent(mapRect)
+                mapSettings.setFlags(QgsMapSettings.Antialiasing | QgsMapSettings.UseAdvancedEffects | QgsMapSettings.ForceVectorOutput | QgsMapSettings.DrawLabeling)
 
                 # create output image and initialize it
                 image = QImage(QSize(width, height), QImage.Format_RGB555)
