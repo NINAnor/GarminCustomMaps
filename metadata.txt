@@ -28,7 +28,7 @@ changelog=Replace mapRenderer with mapSettings;Fix Unicode error in reprojection
 # Tags are comma separated with spaces allowed
 tags=gps,kmz,garmin
 
-homepage=http://hub.qgis.org/projects/garmincustommap
+homepage=https://plugins.qgis.org/plugins/GarminCustomMap/
 category=Plugins
 icon=gcm_icon.png
 # experimental flag
