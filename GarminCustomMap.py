@@ -388,10 +388,12 @@ class GarminCustomMap:
                     driver = gdal.GetDriverByName("GTiff")
                     driver.Register()
                     # Define input CRS
-                    in_CRS = srs.toWkt().encode('UTF-8')
+                    in_CRS = srs.toWkt()
+                    # in_CRS = srs.toWkt().encode('UTF-8')
                     # print type(in_CRS)
                     # Define output CRS
-                    out_CRS = QgsCoordinateReferenceSystem(4326, QgsCoordinateReferenceSystem.EpsgCrsId).toWkt().encode('UTF-8')
+                    out_CRS = QgsCoordinateReferenceSystem(4326, QgsCoordinateReferenceSystem.EpsgCrsId).toWkt()
+                    # out_CRS = QgsCoordinateReferenceSystem(4326, QgsCoordinateReferenceSystem.EpsgCrsId).toWkt().encode('UTF-8')
                     # print type(out_CRS)
                     # Open input dataset
                     input_dataset = gdal.Open(input_file)
