@@ -158,7 +158,7 @@ upload: zip
 	@echo "-------------------------------------"
 	@echo "Uploading plugin to QGIS Plugin repo."
 	@echo "-------------------------------------"
-	$(PLUGIN_UPLOAD) $(PLUGINNAME).zip
+	python .$(PLUGIN_UPLOAD) $(PLUGINNAME).zip
 
 transup:
 	@echo
@@ -195,7 +195,7 @@ doc:
 	@echo "------------------------------------"
 	@echo "Building documentation using sphinx."
 	@echo "------------------------------------"
-	cd help; make html
+	#cd help; make html
 
 pylint:
 	@echo
