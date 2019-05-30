@@ -43,7 +43,7 @@ import tempfile
 from math import *
 
 # Initialize Qt resources from file resources.py
-from GarminCustomMaps import resources
+from GarminCustomMap import resources
 # Import the code for the dialog
 from .GarminCustomMap_dialog import GarminCustomMapDialog
 import os.path

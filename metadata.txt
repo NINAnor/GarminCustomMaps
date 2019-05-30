@@ -16,8 +16,8 @@ repository=https://github.com/NINAnor/GarminCustomMaps/
 
 # Uncomment the following line and add your changelog:
 changelog=
-  Version 3.0
-  - Migrated to QGIS 3 by Matteo Ghetta, Faunalia and founded by the Norwegian Polar Institute.
+  Version 3.1
+  - Migrated to QGIS 3 by Matteo Ghetta, Faunalia; migration funded by the Norwegian Polar Institute (http://www.npolar.no).
 
 # Tags are comma separated with spaces allowed
 tags=gps,kmz,garmin
