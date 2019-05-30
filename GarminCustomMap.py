@@ -490,7 +490,7 @@ class GarminCustomMap:
                 # Check if number of tiles is below Garmins limit of 100 tiles (across all custom maps)
                 n_tiles = (n_rows * n_cols)
                 if n_tiles > 100:
-                    iface.messageBar().pushMessage("WARNING", "The number of tiles is likely to exceed Garmins limit of 100 tiles! Not all tiles will be displayed on your GPS unit. Consider reducing your map size (extend or zoom-factor).", level=QgsMessageBar.WARNING, duration=5)
+                    iface.messageBar().pushMessage("WARNING", "The number of tiles is likely to exceed Garmins limit of 100 tiles! Not all tiles will be displayed on your GPS unit. Consider reducing your map size (extend or zoom-factor).", duration=5)
 
                 progressMessageBar = iface.messageBar().createMessage("Producing tiles...")
                 progress = QProgressBar()
