@@ -524,7 +524,7 @@ class GarminCustomMap:
                     # Loop through rows
                     for r in range(1, int(n_rows) + 1, 1):
                         # Define maximum Y-extend of tiles
-                        if r == (n_rows) and n_rows_rest > 0:
+                        if r == int(n_rows) and n_rows_rest > 0:
                             max_y_ext = n_rows_rest
                         else:
                             max_y_ext = max_y_ext_general
