@@ -288,7 +288,8 @@ class GarminCustomMap:
             dlg = GarminCustomMapDialog()
 
             # Update the dialog
-            dlg.textBrowser.setHtml("<p>The following information should help you "
+            dlg.textBrowser.setHtml("<span  style=\"font-family='Sans serif'; font-size=11pt; font-weight:400\"><p>"
+            "The following information should help you "
             "to adjust the settings for your Garmin Custom Map.</p>"
             "<p>Your current map canvas contains<br>" + str(height) + " rows and<br>" + str(width) + " colums.</p>"
             "<p>Zooming level 1.0 (map scale of the current map canvas which is 1:" + str(round(scale)) + ") will result in " + str(expected_tile_n_unzoomed) + " tile(s) "
@@ -299,13 +300,13 @@ class GarminCustomMap:
             "To comply with a limit of 100 tiles, you should use a zoom factor &lt;= " + max_zoom_100 + ". "
             "This will result in a scale of your Garmin Custom Map of 1 : " + str(int(round(scale / float(max_zoom_100)))) + ".</p>"
             "<p>However, newer Garmin GPS units (Montana, Oregon 6x0, and GPSMAP 64) have a limit of 500 tiles in total (across all Garmin Custom Maps on the device. "
-            "For such GPS units, a Garmin Custom Map produced with the current Zoom level will occupy" + str(round((expected_tile_n_unzoomed / 5.0), 1)) + "% "
+            "For such GPS units, a Garmin Custom Map produced with the current Zoom level will occupy " + str(round((expected_tile_n_unzoomed / 5.0), 1)) + "% "
             "of the maximum possible number of tiles across all Custom Maps on your GPS unit.<br>"
             "To comply with a limit of 500 tiles, you should use a zoom factor &lt;= " + max_zoom_500 + ". "
             "This will result in a scale of your Garmin Custom Map of 1 : " + str(int(round(scale / float(max_zoom_500)))) + ".</p>"
 
             "<p>For more information on size limits and technical details regarding the "
-            """Garmin Custom Maps format see \"About-Tab\" and/or <a href="https://forums.garmin.com/showthread.php?t=2646">https://forums.garmin.com/showthread.php?t=2646</a></p> """)
+            """Garmin Custom Maps format see \"About-Tab\" and/or <a href="https://forums.garmin.com/showthread.php?t=2646">https://forums.garmin.com/showthread.php?t=2646</a></p></span> """)
 
             dlg.zoom_100.setText("Max. zoom for devices with  &lt;= 100 tiles: " + max_zoom_100 + " (1:" + str(int(round(scale / float(max_zoom_100)))) + ")")
             dlg.zoom_500.setText("Max. zoom for devices with  &lt;= 500 tiles: " + max_zoom_500 + " (1:" + str(int(round(scale / float(max_zoom_500)))) + ")")
