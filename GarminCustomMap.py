@@ -342,9 +342,9 @@ class GarminCustomMap:
                 width = mapSettings.outputSize().width() * zoom
                 height = mapSettings.outputSize().height() * zoom
                 mapSettings.setOutputSize(QSize(width, height))
-                mapSettings.setOutputDpi(target_dpi)
+                # mapSettings.setOutputDpi(target_dpi)
                 mapSettings.setExtent(mapRect)
-                mapSettings.setFlags(QgsMapSettings.Antialiasing | QgsMapSettings.UseAdvancedEffects | QgsMapSettings.ForceVectorOutput | QgsMapSettings.DrawLabeling)
+                mapSettings.setFlags(QgsMapSettings.Flags(QgsMapSettings.Antialiasing | QgsMapSettings.UseAdvancedEffects | QgsMapSettings.ForceVectorOutput | QgsMapSettings.DrawLabeling))
 
                 # create output image and initialize it
                 image = QImage(QSize(width, height), QImage.Format_RGB555)
