@@ -250,20 +250,17 @@ class GarminCustomMap:
             width = round(old_width)
             height = round(old_height)
             # Give information about project projection, mapCanvas size and Custom map settings
-            if (height * width) % (1024.0 * 1024.0) >= 1:
-                expected_tile_n_unzoomed = int((height * width) / (1024.0 * 1024.0)) + 1
-            else:
-                expected_tile_n_unzoomed = int((height * width) / (1024.0 * 1024.0))
-
-            if len(str(int(sqrt(100 / ((height * width) / (1024.0 * 1024.0)))))) == 1:
-                max_zoom_100 = str(sqrt(100 / ((height * width) / (1024.0 * 1024.0))))[0:3]
-            else:
-                max_zoom_100 = str(sqrt(100 / ((height * width) / (1024.0 * 1024.0))))[0:4]
-
-            if len(str(int(sqrt(500 / ((height * width) / (1024.0 * 1024.0)))))) == 1:
-                max_zoom_500 = str(sqrt(500 / ((height * width) / (1024.0 * 1024.0))))[0:3]
-            else:
-                max_zoom_500 = str(sqrt(500 / ((height * width) / (1024.0 * 1024.0))))[0:4]
+            hwproduct = height * width
+            tilesize = 1024.0 * 1024.0
+            hwtileratio = hwproduct / tilesize
+            # Round up number of tiles if map size (hwproduct) isn't evenly divisible by tilesize
+            # Using floor division and negative numerator trick
+            expected_tile_n_unzoomed = -(-hwproduct//tilesize)
+            # Zoom value hints
+            max_zoom_100 = sqrt(100 / hwtileratio)
+            max_zoom_500 = sqrt(500 / hwtileratio)
+            scale_zoom_100=round(scale/max_zoom_100)
+            scale_zoom_500=round(scale/max_zoom_500)
 
             if SourceCRS != 'EPSG:4326':
                 def projWaring():
@@ -435,10 +432,7 @@ class GarminCustomMap:
                     s_l_side_relation = 0
 
                     # Estimate number of tiles in the result
-                    if float(x_extent * y_extent) % (1024 * 1024) >= 1:
-                        expected_tile_n = int(float(x_extent * y_extent) / (1024 * 1024)) + 1
-                    else:
-                        expected_tile_n = int(float(x_extent * y_extent) / (1024 * 1024))
+                    expected_tile_n = -(-(x_extent * y_extent) // max_pix)
 
                     # Find settings for tiling with:
                     # 1 minimum number of tiles,
@@ -525,17 +519,17 @@ class GarminCustomMap:
                     n_tiles = 0
                     empty_tiles = 0
                     # Loop through rows
-                    for r in range(1, int(n_rows) + 1, 1):
+                    for r in range(1, n_rows + 1, 1):
                         # Define maximum Y-extend of tiles
-                        if r == int(n_rows) and n_rows_rest > 0:
+                        if r == n_rows and n_rows_rest > 0:
                             max_y_ext = n_rows_rest
                         else:
                             max_y_ext = max_y_ext_general
 
                         # (Within row-loop) Loop through columns
-                        for c in range(1, int(n_cols) + 1, 1):
+                        for c in range(1, n_cols + 1, 1):
                             # Define maximum X-extend of tiles
-                            if c == int(n_cols) and n_cols_rest > 0:
+                            if c == n_cols and n_cols_rest > 0:
                                 max_x_ext = n_cols_rest
                             else:
                                 max_x_ext = max_x_ext_general
