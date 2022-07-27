@@ -226,9 +226,9 @@ class GarminCustomMap:
         """Run method that performs all the real work"""
         # prepare dialog parameters
         settings = QSettings()
-        lastDir = settings.value("/UI/lastShapefileDir")
-        filter = "GarminCustomMap-files (*.kmz)"
-        out_putFile = QgsEncodingFileDialog(None, "Select output file", 'My_CustomMap.kmz', "GarminCustomMap (*.kmz)")
+        lastDir = settings.value("/UI/lastProjectDir")
+        fileFilter = "GarminCustomMap files (*.kmz)"
+        out_putFile = QgsEncodingFileDialog(None, "Select output file", lastDir, fileFilter)
         out_putFile.setDefaultSuffix("kmz")
         out_putFile.setFileMode(QFileDialog.AnyFile)
         out_putFile.setAcceptMode(QFileDialog.AcceptSave)
@@ -263,7 +263,7 @@ class GarminCustomMap:
             scale_zoom_500=round(scale/max_zoom_500)
 
             if SourceCRS != 'EPSG:4326':
-                def projWaring():
+                def projWarning():
                     proj_msg = QMessageBox()
                     proj_msg.setWindowTitle("Coordinate Reference System mismatch")
                     proj_msg.setText("The coordinate reference system (CRS) of your project differs from WGS84 (EPSG: 4326). "
@@ -278,7 +278,7 @@ class GarminCustomMap:
                 widget = iface.messageBar().createMessage("WARNING", "Project CRS differs from WGS84 (EPSG: 4326)")
                 button = QPushButton(widget)
                 button.setText("Info")
-                button.pressed.connect(projWaring)
+                button.pressed.connect(projWarning)
                 widget.layout().addWidget(button)
                 iface.messageBar().pushWidget(widget, Qgis.Critical, duration=10)
 
@@ -286,28 +286,54 @@ class GarminCustomMap:
             dlg = GarminCustomMapDialog()
 
             # Update the dialog
-            dlg.textBrowser.setHtml("<span  style=\"font-family='Sans serif'; font-size=11pt; font-weight:400\"><p>"
-            "The following information should help you "
-            "to adjust the settings for your Garmin Custom Map.</p>"
-            "<p>Your current map canvas contains<br>" + str(height) + " rows and<br>" + str(width) + " colums.</p>"
-            "<p>Zooming level 1.0 (map scale of the current map canvas which is 1:" + str(round(scale)) + ") will result in " + str(expected_tile_n_unzoomed) + " tile(s) "
-            "(single images within your Garmin Custom Map).</p>"
-            "<p>In general, Garmin Custom Maps are limited to a number of 100 tiles in total (across all Garmin Custom Maps on the device). "
-            "A Garmin Custom Map produced with the current Zoom level will occupy " + str(expected_tile_n_unzoomed) + "% "
-            "of the total capacity of most types of Garmin GPS units.<br>"
-            "To comply with a limit of 100 tiles, you should use a zoom factor &lt;= " + max_zoom_100 + ". "
-            "This will result in a scale of your Garmin Custom Map of 1 : " + str(int(round(scale / float(max_zoom_100)))) + ".</p>"
-            "<p>However, newer Garmin GPS units (Montana, Oregon 6x0, and GPSMAP 64) have a limit of 500 tiles in total (across all Garmin Custom Maps on the device. "
-            "For such GPS units, a Garmin Custom Map produced with the current Zoom level will occupy " + str(round((expected_tile_n_unzoomed / 5.0), 1)) + "% "
-            "of the maximum possible number of tiles across all Custom Maps on your GPS unit.<br>"
-            "To comply with a limit of 500 tiles, you should use a zoom factor &lt;= " + max_zoom_500 + ". "
-            "This will result in a scale of your Garmin Custom Map of 1 : " + str(int(round(scale / float(max_zoom_500)))) + ".</p>"
+            dlg.textBrowser.setHtml(
+            """<span  style=\"font-family='Sans serif'; font-size=11pt; font-weight:400\">
+            <p>
+            The following information should help you to adjust the settings for your Garmin Custom Map.
+            </p>
 
-            "<p>For more information on size limits and technical details regarding the "
-            """Garmin Custom Maps format see \"About-Tab\" and/or <a href="https://forums.garmin.com/showthread.php?t=2646">https://forums.garmin.com/showthread.php?t=2646</a></p></span> """)
+            <p>
+            Your current map canvas contains:<br>&bull; {height} rows<br>&bull; {width} columns
+            </p>
 
-            dlg.zoom_100.setText("Max. zoom for devices with  &lt;= 100 tiles: " + max_zoom_100 + " (1:" + str(int(round(scale / float(max_zoom_100)))) + ")")
-            dlg.zoom_500.setText("Max. zoom for devices with  &lt;= 500 tiles: " + max_zoom_500 + " (1:" + str(int(round(scale / float(max_zoom_500)))) + ")")
+            <p>
+            Zooming level 1.0 (map scale of the current map canvas which is 1:{scale})
+            will result in {expected_tile_n_unzoomed} (single images within your Garmin Custom Map).
+            </p>
+
+            <p>
+            In general, Garmin Custom Maps are limited to a number of 100 tiles in
+            total (across all Garmin Custom Maps on the device).
+            A Garmin Custom Map produced with the current Zoom level will occupy {cap100:.1%}
+            of the total capacity of most types of Garmin GPS units.
+            <br>
+            To comply with a limit of 100 tiles, you should use a zoom factor &lt;= {max_zoom_100!r:.5}
+            This will result in a scale of your Garmin Custom Map of 1:{scale_zoom_100}.
+            </p>
+
+            <p>
+            However, newer Garmin GPS units (Montana, Oregon 6x0, and GPSMAP 64)
+            have a limit of 500 tiles in total (across all Garmin Custom Maps on the device).
+            For such GPS units, a Garmin Custom Map produced with the current Zoom level will occupy {cap500:.1%}
+            of the maximum possible number of tiles across all Custom Maps on your GPS unit.
+            <br>
+            To comply with a limit of 500 tiles, you should use a zoom factor &lt;= {max_zoom_500!r:.5}
+            This will result in a scale of your Garmin Custom Map of 1:{scale_zoom_500}.
+            </p>
+
+            <p>
+            For more information on size limits and technical details regarding the
+            Garmin Custom Maps format see \"About\" tab and/or
+            <a href="https://forums.garmin.com/showthread.php?t=2646">
+            https://forums.garmin.com/showthread.php?t=2646</a>
+            </p></span> """.format(
+            height=height, width=width, scale=round(scale), expected_tile_n_unzoomed=expected_tile_n_unzoomed,
+            cap100=expected_tile_n_unzoomed/100, max_zoom_100=max_zoom_100, scale_zoom_100=scale_zoom_100,
+            cap500=expected_tile_n_unzoomed/500, max_zoom_500=max_zoom_500, scale_zoom_500=scale_zoom_500))
+
+            #TODO: need to figure out a way to display one decimal place, but round down values
+            dlg.zoom_100.setText("Max. zoom for devices with  &lt;= 100 tiles: {!r:>5.5} (1:{})".format(max_zoom_100, scale_zoom_100))
+            dlg.zoom_500.setText("Max. zoom for devices with  &lt;= 500 tiles: {!r:>5.5} (1:{})".format(max_zoom_500, scale_zoom_500))
 
             # Show the dialog
             dlg.show()
@@ -325,7 +351,7 @@ class GarminCustomMap:
                 options.append("QUALITY=" + str(qual))
                 draworder = dlg.draworder.value()
                 zoom = float(dlg.zoom.value())
-                in_file = os.path.basename(kmz_file[0:(len(kmz_file) - 4)])
+                in_file = os.path.splitext(os.path.basename(kmz_file))[0]
                 max_pix = (1024 * 1024)
                 # Create tmp-folder
                 out_folder = tempfile.mkdtemp('_tmp', 'gcm_')
@@ -357,6 +383,8 @@ class GarminCustomMap:
                 imagePainter.end()
 
                 # Save the image
+                # This is the full size image of the whole extent
+                # It is temporary because later it gets divided into smaller JPGs according to the Garmin Custom Map constraints
                 image.save(input_file, "png")
 
                 # Set Geotransform and NoData values
@@ -420,6 +448,7 @@ class GarminCustomMap:
                     warped_input = None
                     input_file = output_geofile
 
+                # Here the code breaks up the initial image of the full extent
                 # Calculate tile size and number of tiles
                 indataset = gdal.Open(input_file)
 
@@ -487,9 +516,9 @@ class GarminCustomMap:
                 # Check if number of tiles is below Garmins limit of 100 tiles (across all custom maps)
                 n_tiles = (n_rows * n_cols)
                 if n_tiles > 100:
-                    iface.messageBar().pushMessage("WARNING", "The number of tiles is likely to exceed Garmins limit of 100 tiles! Not all tiles will be displayed on your GPS unit. Consider reducing your map size (extend or zoom-factor).", duration=5)
+                    iface.messageBar().pushMessage("WARNING", "The number of tiles is likely to exceed Garmins limit of 100 tiles! Not all tiles will be displayed on your GPS unit. Consider reducing your map size (extend or zoom-factor).", level=Qgis.Warning, duration=5)
 
-                progressMessageBar = iface.messageBar().createMessage("Producing total of " + str(n_tiles) + " tiles...")
+                progressMessageBar = iface.messageBar().createMessage("Producing total of {} tiles...".format(n_tiles))
                 progress = QProgressBar()
                 progress.setMaximum(n_tiles)
                 progress.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
