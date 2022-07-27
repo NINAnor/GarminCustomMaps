@@ -489,7 +489,7 @@ class GarminCustomMap:
                 if n_tiles > 100:
                     iface.messageBar().pushMessage("WARNING", "The number of tiles is likely to exceed Garmins limit of 100 tiles! Not all tiles will be displayed on your GPS unit. Consider reducing your map size (extend or zoom-factor).", duration=5)
 
-                progressMessageBar = iface.messageBar().createMessage("Producing tiles...")
+                progressMessageBar = iface.messageBar().createMessage("Producing total of " + str(n_tiles) + " tiles...")
                 progress = QProgressBar()
                 progress.setMaximum(n_tiles)
                 progress.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
@@ -593,6 +593,8 @@ class GarminCustomMap:
                             n_tiles = (n_tiles + 1)
                             # Update progress bar
                             progress.setValue(n_tiles)
+                            # Output message in status bar, too
+                            iface.statusBarIface().showMessage("Produced tile: " + str(n_tiles))
                         # Calculate new Y-offset
                         y_offset = (y_offset + max_y_ext)
                         # Reset X-offset
@@ -622,7 +624,9 @@ class GarminCustomMap:
                 os.rmdir(out_folder)
                 # Clear progressbar
                 iface.messageBar().clearWidgets()
+                # Clear statusbar
+                iface.statusBarIface().clearMessage()
 
                 tiles_total = n_tiles - empty_tiles
                 # Give success message
-                iface.messageBar().pushMessage("Done", "Produced " + str(tiles_total) + " tiles, with " + str(n_rows) + " rows and " + str(int(n_cols)) + " colums.", level=Qgis.Info, duration=5)
+                iface.messageBar().pushMessage("Done", "Produced {} tiles, with {} rows and {} columns.".format(tiles_total, n_rows, n_cols), level=Qgis.Success, duration=5)
