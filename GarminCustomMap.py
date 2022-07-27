@@ -240,14 +240,15 @@ class GarminCustomMap:
             scale = canvas.scale()
             mapSettings = canvas.mapSettings()
             mapRect = canvas.extent()
-            width = int(round(mapSettings.outputSize().width()))
-            height = int(round(mapSettings.outputSize().height()))
             srs = mapSettings.destinationCrs()
             SourceCRS = str(srs.authid())
             # Save settings for resetting the mapRenderer after GCM production
             old_width = mapSettings.outputSize().width()
             old_height = mapSettings.outputSize().height()
             old_dpi = mapSettings.outputDpi()
+            # Reduce clutter of making mapSettings calls and just use the existing variables
+            width = round(old_width)
+            height = round(old_height)
             # Give information about project projection, mapCanvas size and Custom map settings
             if (height * width) % (1024.0 * 1024.0) >= 1:
                 expected_tile_n_unzoomed = int((height * width) / (1024.0 * 1024.0)) + 1
@@ -336,15 +337,15 @@ class GarminCustomMap:
 
                 tname = in_file
                 # Set QGIS objects
-                target_dpi = int(round(zoom * mapSettings.outputDpi()))
+                target_dpi = round(zoom * mapSettings.outputDpi())
                 # Initialise temporary output image
                 x, y = 0, 0
-                width = mapSettings.outputSize().width() * zoom
-                height = mapSettings.outputSize().height() * zoom
+                width = round(mapSettings.outputSize().width() * zoom)
+                height = round(mapSettings.outputSize().height() * zoom)
                 mapSettings.setOutputSize(QSize(width, height))
                 mapSettings.setOutputDpi(target_dpi)
                 mapSettings.setExtent(mapRect)
-                mapSettings.setFlags(QgsMapSettings.Antialiasing | QgsMapSettings.UseAdvancedEffects | QgsMapSettings.ForceVectorOutput | QgsMapSettings.DrawLabeling)
+                mapSettings.setFlags(QgsMapSettings.Flags(QgsMapSettings.Antialiasing | QgsMapSettings.UseAdvancedEffects | QgsMapSettings.ForceVectorOutput | QgsMapSettings.DrawLabeling))
 
                 # create output image and initialize it
                 image = QImage(QSize(width, height), QImage.Format_RGB555)
@@ -357,7 +358,6 @@ class GarminCustomMap:
                 mapRenderer.start()
                 mapRenderer.waitForFinished()
                 imagePainter.end()
-
 
                 # Save the image
                 image.save(input_file, "png")
@@ -481,12 +481,14 @@ class GarminCustomMap:
                     n_cols = (x_extent / max_x_ext_general) + 1
                 else:
                     n_cols = (x_extent / max_x_ext_general)
+                n_cols = int(n_cols)
 
                 #
                 if n_rows_rest >= 1:
                     n_rows = (y_extent / max_y_ext_general) + 1
                 else:
                     n_rows = (y_extent / max_y_ext_general)
+                n_rows = int(n_rows)
 
                 # Check if number of tiles is below Garmins limit of 100 tiles (across all custom maps)
                 n_tiles = (n_rows * n_cols)
