@@ -41,6 +41,7 @@ import zlib
 import tempfile
 
 from math import *
+import time
 
 # Initialize Qt resources from file resources.py
 from GarminCustomMap import resources
@@ -49,6 +50,8 @@ from .GarminCustomMap_dialog import GarminCustomMapDialog
 import os.path
 from PyQt5.QtWidgets import QAction, QFileDialog, QDialog, QMessageBox, QProgressBar
 
+def dbgMsg (message):
+    QgsMessageLog.logMessage(message, "GarminCustomMap", level=Qgis.Info)
 
 class GarminCustomMap:
     """QGIS Plugin Implementation."""
@@ -228,6 +231,8 @@ class GarminCustomMap:
         settings = QSettings()
         lastDir = settings.value("/UI/lastProjectDir")
         fileFilter = "GarminCustomMap files (*.kmz)"
+        # TODO: Getting the file location should be asynchronous and settable in a file field in the UI
+        # TODO: This and the actual processing section should be separated out from the run in another refactor, right now the UI is blocked while we wait for processing
         out_putFile = QgsEncodingFileDialog(None, "Select output file", lastDir, fileFilter)
         out_putFile.setDefaultSuffix("kmz")
         out_putFile.setFileMode(QFileDialog.AnyFile)
@@ -331,21 +336,23 @@ class GarminCustomMap:
             cap100=expected_tile_n_unzoomed/100, max_zoom_100=max_zoom_100, scale_zoom_100=scale_zoom_100,
             cap500=expected_tile_n_unzoomed/500, max_zoom_500=max_zoom_500, scale_zoom_500=scale_zoom_500))
 
-            #TODO: need to figure out a way to display one decimal place, but round down values
+            # TODO: need to figure out a way to display one decimal place, but round down values
             dlg.zoom_100.setText("Max. zoom for devices with  &lt;= 100 tiles: {!r:>5.5} (1:{})".format(max_zoom_100, scale_zoom_100))
             dlg.zoom_500.setText("Max. zoom for devices with  &lt;= 500 tiles: {!r:>5.5} (1:{})".format(max_zoom_500, scale_zoom_500))
 
             # Show the dialog
+            # TODO: Should be doing this in a separate signal call, connected to the OK button, this way the run method blocks the UI
             dlg.show()
             result = dlg.exec_()
             # See if OK was pressed
             if result == 1:
                 # Set variables
-                optimize = int(dlg.flag_optimize.isChecked())
-                skip_empty = int(dlg.flag_skip_empty.isChecked())
+                optimize = dlg.flag_optimize.isChecked()
+                skip_empty = dlg.flag_skip_empty.isChecked()
                 max_y_ext_general = int(dlg.nrows.value())
                 max_x_ext_general = int(dlg.ncols.value())
                 qual = int(dlg.jpg_quality.value())
+                dbg = dlg.flag_dbgMsg.isChecked()
                 # Set options for jpg-production
                 options = []
                 options.append("QUALITY=" + str(qual))
@@ -385,9 +392,11 @@ class GarminCustomMap:
                 # Save the image
                 # This is the full size image of the whole extent
                 # It is temporary because later it gets divided into smaller JPGs according to the Garmin Custom Map constraints
+                # TODO: add try:catch to the save operation in case of weird file issues
                 image.save(input_file, "png")
 
                 # Set Geotransform and NoData values
+                # TODO: add try:catch to make sure gdal was actually able to open the file
                 input_dataset = gdal.Open(input_file)
 
                 # Set Geotransform values
@@ -398,6 +407,16 @@ class GarminCustomMap:
                 xScale = (LRx - ULx) / width
                 yScale = (LRy - ULy) / height
                 input_dataset.SetGeoTransform([ULx, xScale, 0, ULy, 0, yScale])
+
+                # Print some GDAL info to messages:
+                if dbg:
+                    dbgMsg("*--- GDAL info ---*")
+                    dbgMsg("This is the *first* instance of the dataset, directly after writing image to file from QGIS")
+                    dbgMsg("Driver: {}/{}".format(input_dataset.GetDriver().ShortName, input_dataset.GetDriver().LongName))
+                    dbgMsg("Size: {} x {} x {}".format(input_dataset.RasterXSize, input_dataset.RasterYSize, input_dataset.RasterCount))
+                    dbgMsg("Projection: {}".format(input_dataset.GetGeoTransform()))
+                    dbgMsg("Geotransform: {}".format(input_dataset.GetGeoTransform()))
+                    dbgMsg("-------------------")
 
                 # Close dataset
                 input_dataset = None
@@ -450,11 +469,21 @@ class GarminCustomMap:
 
                 # Here the code breaks up the initial image of the full extent
                 # Calculate tile size and number of tiles
+                # Add try:catch to make sure we are opening the file properly
                 indataset = gdal.Open(input_file)
+                # Print some GDAL info to messages:
+                if dbg:
+                    dbgMsg("*--- GDAL info ---*")
+                    dbgMsg("This is the *Second* instance of the dataset, directly after writing image to file from QGIS")
+                    #dbgMsg("Driver: {}/{}".format(input_dataset.GetDriver().ShortName, input_dataset.GetDriver().LongName))
+                    #dbgMsg("Size: {} x {} x {}".format(input_dataset.RasterXSize, input_dataset.RasterYSize, input_dataset.RasterCount))
+                    #dbgMsg("Projection: {}".format(input_dataset.GetGeoTransform()))
+                    #dbgMsg("Geotransform: {}".format(input_dataset.GetGeoTransform()))
+                    dbgMsg("-------------------")
 
                 x_extent = indataset.RasterXSize
                 y_extent = indataset.RasterYSize
-                if optimize == 1 :
+                if optimize:
                     # Identify length of the short and long side of the map canvas and their relation
                     short_ext = min(x_extent, y_extent)
                     long_ext = max(x_extent, y_extent)
@@ -573,7 +602,7 @@ class GarminCustomMap:
                             t_band_2 = indataset.GetRasterBand(2).ReadAsArray(x_offset, y_offset, max_x_ext, max_y_ext)
                             t_band_3 = indataset.GetRasterBand(3).ReadAsArray(x_offset, y_offset, max_x_ext, max_y_ext)
 
-                            if skip_empty == 1 :
+                            if skip_empty:
                                 if t_band_1.min() == 255 and t_band_2.min() == 255 and t_band_3.min() == 255 :
                                     empty_tiles = empty_tiles + 1
 
@@ -623,6 +652,7 @@ class GarminCustomMap:
                             # Update progress bar
                             progress.setValue(n_tiles)
                             # Output message in status bar, too
+                            time.sleep (0.25)
                             iface.statusBarIface().showMessage("Produced tile: " + str(n_tiles))
                         # Calculate new Y-offset
                         y_offset = (y_offset + max_y_ext)
