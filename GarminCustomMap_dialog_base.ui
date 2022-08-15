@@ -82,9 +82,9 @@
             </spacer>
            </item>
            <item row="2" column="0" alignment="Qt::AlignVCenter">
-            <widget class="QSpinBox" name="nrows">
+            <widget class="QSpinBox" name="tile_height">
              <property name="toolTip">
-              <string>Number of rows (pixel) in each tile.
+              <string>Height of each tile in pixels.
 Each tile is limited to 1 megapixel: e.g.  512x2048 pixel.
 The tile size influences the drawing speed on your GPS unit.
 Smaller files are drawn faster, but the number of tiles on 
@@ -102,16 +102,16 @@ your GPS unit is limied to 100 (across all Custom Maps).</string>
             </widget>
            </item>
            <item row="2" column="1" colspan="2" alignment="Qt::AlignLeft|Qt::AlignVCenter">
-            <widget class="QLabel" name="nrows_label">
+            <widget class="QLabel" name="tile_height_label">
              <property name="text">
-              <string>Number of rows (pixel) in each tile</string>
+              <string>Height of each tile in pixels</string>
              </property>
             </widget>
            </item>
            <item row="3" column="0" alignment="Qt::AlignVCenter">
-            <widget class="QSpinBox" name="ncols">
+            <widget class="QSpinBox" name="tile_width">
              <property name="toolTip">
-              <string>Number of columns (pixel) in each tile.
+              <string>Width of each tile in pixels.
 Each tile is limited to 1 megapixel: e.g.  512x2048 pixel.
 The tile size influences the drawing speed on your GPS unit.
 Smaller files are drawn faster, but the number of tiles on
@@ -129,9 +129,9 @@ your GPS unit is limied to 100 (across all Custom Maps).</string>
             </widget>
            </item>
            <item row="3" column="1" colspan="2" alignment="Qt::AlignLeft|Qt::AlignVCenter">
-            <widget class="QLabel" name="ncols_label">
+            <widget class="QLabel" name="tile_width_label">
              <property name="text">
-              <string>Number of columns (pixel) in each tile</string>
+              <string>Width of each tile in pixels</string>
              </property>
             </widget>
            </item>
@@ -418,8 +418,8 @@ p, li { white-space: pre-wrap; }
   </layout>
  </widget>
  <tabstops>
-  <tabstop>nrows</tabstop>
-  <tabstop>ncols</tabstop>
+  <tabstop>tile_height</tabstop>
+  <tabstop>tile_width</tabstop>
   <tabstop>jpg_quality</tabstop>
   <tabstop>draworder</tabstop>
   <tabstop>textBrowser</tabstop>

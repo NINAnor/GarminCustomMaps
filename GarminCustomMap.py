@@ -42,6 +42,8 @@ import tempfile
 
 from math import *
 import time
+# Load optimization functions
+from .optimization import optimize_fac
 
 # Initialize Qt resources from file resources.py
 from GarminCustomMap import resources
@@ -201,8 +203,10 @@ class GarminCustomMap:
         del self.toolbar
 
     def cleanUp(self):
+        # TODO: Is this method every actually called?
         # Reset mapSettings
         mapSettings.setOutputSize(QSize(old_width, old_height), old_dpi)
+        dbgMsg("\n****\nThe cleanUp method was called.\n****")
 
         if os.path.exists(out_put + ".png") :
             os.remove(out_put + ".png")
@@ -212,9 +216,6 @@ class GarminCustomMap:
 
         if os.path.exists(output_geofile) :
             os.remove(output_geofile)
-
-        if os.path.exists(os.path.join(out_folder, input_geofile)) :
-            os.remove(os.path.join(out_folder, input_geofile))
 
         if os.path.exists(os.path.join(out_folder, 'doc.kml')) :
             os.remove(os.path.join(out_folder, 'doc.kml'))
@@ -337,6 +338,8 @@ class GarminCustomMap:
             cap500=expected_tile_n_unzoomed/500, max_zoom_500=max_zoom_500, scale_zoom_500=scale_zoom_500))
 
             # TODO: need to figure out a way to display one decimal place, but round down values
+            # TODO: consider truncated division trunc()
+            # TODO: try using the 'f' format string: f'{floatval:.1f}'
             dlg.zoom_100.setText("Max. zoom for devices with  &lt;= 100 tiles: {!r:>5.5} (1:{})".format(max_zoom_100, scale_zoom_100))
             dlg.zoom_500.setText("Max. zoom for devices with  &lt;= 500 tiles: {!r:>5.5} (1:{})".format(max_zoom_500, scale_zoom_500))
 
@@ -349,8 +352,10 @@ class GarminCustomMap:
                 # Set variables
                 optimize = dlg.flag_optimize.isChecked()
                 skip_empty = dlg.flag_skip_empty.isChecked()
-                max_y_ext_general = int(dlg.nrows.value())
-                max_x_ext_general = int(dlg.ncols.value())
+                tile_height = int(dlg.tile_height.value())
+                tile_width = int(dlg.tile_width.value())
+                # TODO: add a field to specify max number of tiles
+                max_num_tiles = 100
                 qual = int(dlg.jpg_quality.value())
                 dbg = dlg.flag_dbgMsg.isChecked()
                 # Set options for jpg-production
@@ -362,6 +367,7 @@ class GarminCustomMap:
                 max_pix = (1024 * 1024)
                 # Create tmp-folder
                 out_folder = tempfile.mkdtemp('_tmp', 'gcm_')
+                if dbg: dbgMsg("Temporary output folder: " + out_folder)
                 out_put = os.path.join(out_folder, in_file)
                 input_file = out_put + u'.png'
 
@@ -393,6 +399,7 @@ class GarminCustomMap:
                 # This is the full size image of the whole extent
                 # It is temporary because later it gets divided into smaller JPGs according to the Garmin Custom Map constraints
                 # TODO: add try:catch to the save operation in case of weird file issues
+                if dbg: dbgMsg("Initial render file: " + input_file)
                 image.save(input_file, "png")
 
                 # Set Geotransform and NoData values
@@ -427,8 +434,7 @@ class GarminCustomMap:
                 # Warp the exported image to WGS84 if necessary
                 if SourceCRS != 'EPSG:4326':
                     # Define input and output file
-                    input_geofile = out_put + "wgs84.tif"
-                    output_geofile = os.path.join(out_folder, input_geofile)
+                    output_geofile = os.path.join(out_folder, out_put + "wgs84.tif")
                     # Register tif-driver
                     driver = gdal.GetDriverByName("GTiff")
                     driver.Register()
@@ -467,85 +473,55 @@ class GarminCustomMap:
                     warped_input = None
                     input_file = output_geofile
 
-                # Here the code breaks up the initial image of the full extent
+                # Here the code breaks up the initial full-extent render file
                 # Calculate tile size and number of tiles
                 # Add try:catch to make sure we are opening the file properly
                 indataset = gdal.Open(input_file)
+                x_extent = indataset.RasterXSize
+                y_extent = indataset.RasterYSize
+
                 # Print some GDAL info to messages:
                 if dbg:
                     dbgMsg("*--- GDAL info ---*")
-                    dbgMsg("This is the *Second* instance of the dataset, directly after writing image to file from QGIS")
-                    #dbgMsg("Driver: {}/{}".format(input_dataset.GetDriver().ShortName, input_dataset.GetDriver().LongName))
-                    #dbgMsg("Size: {} x {} x {}".format(input_dataset.RasterXSize, input_dataset.RasterYSize, input_dataset.RasterCount))
-                    #dbgMsg("Projection: {}".format(input_dataset.GetGeoTransform()))
-                    #dbgMsg("Geotransform: {}".format(input_dataset.GetGeoTransform()))
+                    dbgMsg("This is the *Second* instance of the dataset, after writing image to file from QGIS and potentially reprojecting.")
+                    dbgMsg("Driver: {}/{}".format(indataset.GetDriver().ShortName, indataset.GetDriver().LongName))
+                    dbgMsg("Size: {} x {} x {}".format(x_extent, y_extent, indataset.RasterCount))
+                    dbgMsg("Projection: {}".format(indataset.GetGeoTransform()))
+                    dbgMsg("Geotransform: {}".format(indataset.GetGeoTransform()))
                     dbgMsg("-------------------")
 
-                x_extent = indataset.RasterXSize
-                y_extent = indataset.RasterYSize
                 if optimize:
-                    # Identify length of the short and long side of the map canvas and their relation
-                    short_ext = min(x_extent, y_extent)
-                    long_ext = max(x_extent, y_extent)
-                    s_l_side_relation = 0
-
-                    # Estimate number of tiles in the result
-                    expected_tile_n = -(-(x_extent * y_extent) // max_pix)
-
-                    # Find settings for tiling with:
-                    # 1 minimum number of tiles,
-                    # 2 a short / long size relation close to 1,
-                    # 3 and a minimum numer of pixels in each tile
-                    for tc in range(1, expected_tile_n + 1, 1):
-                        if expected_tile_n % tc >= 1:
-                            continue
-                        else:
-
-                            if short_ext % tc >= 1:
-                                s_pix = int(short_ext / tc) + 1
-                            else:
-                                s_pix = int(short_ext / tc)
-
-                            if long_ext % tc >= 1:
-                                l_pix = int(long_ext / (expected_tile_n / tc)) + 1
-                            else:
-                                l_pix = int(long_ext / (expected_tile_n / tc))
-
-                            if (s_pix * l_pix) <= (1024 * 1024):
-                                if min((float(s_pix) / float(l_pix)), (float(l_pix) / float(s_pix))) >= s_l_side_relation:
-                                    s_l_side_relation = min((float(s_pix) / float(l_pix)), (float(l_pix) / float(s_pix)))
-                                    s_pix_opt = s_pix
-                                    l_pix_opt = l_pix
-
-                    # Set tile size variable according to optimal setings
-                    if short_ext == x_extent:
-                        max_x_ext_general = s_pix_opt
-                        max_y_ext_general = l_pix_opt
+                    if dbg: dbgMsg("*--- Optimizing ---*")
+                    tile_width, tile_height = optimize_fac (
+                        x_extent, y_extent, max_pix, max_num_tiles)
+                    if (tile_width, tile_height) == (1, 1):
+                        tile_width, tile_height = 1024, 1024
+                        if dbg:
+                            dbgMsg("Done, couldn't find a good solution with the following constraints:")
+                            dbgMsg("Max tile size: {} (1024 x 1024), max number of tiles: {}".format(max_pix, max_num_tiles))
                     else:
-                        max_y_ext_general = s_pix_opt
-                        max_x_ext_general = l_pix_opt
+                        tile_width, tile_height = int (tile_width), int (tile_height)
+                        if dbg:
+                            dbgMsg("Done, optimal tile size: {} x {}".format(tile_width, tile_height))
+                            dbgMsg("-------------------")
 
-                # Identify number of rows and columns
-                n_cols_rest = x_extent % max_x_ext_general
-                n_rows_rest = y_extent % max_y_ext_general
-                #
-                if n_cols_rest >= 1:
-                    n_cols = (x_extent / max_x_ext_general) + 1
-                else:
-                    n_cols = (x_extent / max_x_ext_general)
-                n_cols = int(n_cols)
 
-                #
-                if n_rows_rest >= 1:
-                    n_rows = (y_extent / max_y_ext_general) + 1
-                else:
-                    n_rows = (y_extent / max_y_ext_general)
-                n_rows = int(n_rows)
+                # Calculate number of rows and columns
+                n_cols = -(-x_extent//tile_width)
+                n_rows = -(-y_extent//tile_height)
+                # Calculate number of tiles
+                n_tiles = (n_rows * n_cols)
+                # Calculate the pixels that don't fit into the full-tile coverage (trailing pixels)
+                x_pix_trailing = x_extent % tile_width
+                y_pix_trailing = y_extent % tile_height
 
                 # Check if number of tiles is below Garmins limit of 100 tiles (across all custom maps)
-                n_tiles = (n_rows * n_cols)
                 if n_tiles > 100:
-                    iface.messageBar().pushMessage("WARNING", "The number of tiles is likely to exceed Garmins limit of 100 tiles! Not all tiles will be displayed on your GPS unit. Consider reducing your map size (extend or zoom-factor).", level=Qgis.Warning, duration=5)
+                    iface.messageBar().pushMessage("WARNING", "The number of tiles ({}) exceeds the Garmin limit of 100 tiles! Not all tiles will be displayed on your GPS unit. Consider reducing your map size (extent or zoom-factor).".format(n_tiles), level=Qgis.Warning, duration=5)
+
+                # Check if size of tiles is below Garmins limit of 1 megapixel (for each tile)
+                if (tile_width * tile_height) > max_pix:
+                    iface.messageBar().pushMessage("WARNING", "The number of pixels in a tile exceeds Garmins limit of 1 megapixel per tile! Images will not be displayed properly.", level=Qgis.Warning, duration=5)
 
                 progressMessageBar = iface.messageBar().createMessage("Producing total of {} tiles...".format(n_tiles))
                 progress = QProgressBar()
@@ -554,12 +530,8 @@ class GarminCustomMap:
                 progressMessageBar.layout().addWidget(progress)
                 iface.messageBar().pushWidget(progressMessageBar, Qgis.Info)
 
-                # Check if size of tiles is below Garmins limit of 1 megapixel (for each tile)
-                n_pix = (max_x_ext_general * max_y_ext_general)
-
-                if n_pix > max_pix:
-                    iface.messageBar().pushMessage("WARNING", "The number of pixels in a tile exceeds Garmins limit of 1 megapixel per tile! Images will not be displayed properly.", level=Qgis.Warning, duration=5)
-
+                # Open kmz and kml for writing
+                # TODO: Add try:catch to make sure we have permission to write to files
                 kmz = zipfile.ZipFile(kmz_file, 'w')
                 with open(os.path.join(out_folder, 'doc.kml'), 'w') as kml:
 
@@ -577,20 +549,20 @@ class GarminCustomMap:
                     n_tiles = 0
                     empty_tiles = 0
                     # Loop through rows
-                    for r in range(1, n_rows + 1, 1):
+                    for r in range(1, n_rows + 1):
                         # Define maximum Y-extend of tiles
-                        if r == n_rows and n_rows_rest > 0:
-                            max_y_ext = n_rows_rest
+                        if r == n_rows and y_pix_trailing > 0:
+                            max_y_ext = y_pix_trailing
                         else:
-                            max_y_ext = max_y_ext_general
+                            max_y_ext = tile_height
 
                         # (Within row-loop) Loop through columns
-                        for c in range(1, n_cols + 1, 1):
+                        for c in range(1, n_cols + 1):
                             # Define maximum X-extend of tiles
-                            if c == n_cols and n_cols_rest > 0:
-                                max_x_ext = n_cols_rest
+                            if c == n_cols and x_pix_trailing > 0:
+                                max_x_ext = x_pix_trailing
                             else:
-                                max_x_ext = max_x_ext_general
+                                max_x_ext = tile_width
                             # Define name for tile-jpg
                             t_name = tname + '_%(r)d_%(c)d.jpg' % {"r": r, "c": c}
                             # Set parameters for "gdal_translate" (JPEG-driver has no Create() (but CreateCopy()) method so first a VRT has to be created band by band
@@ -657,6 +629,7 @@ class GarminCustomMap:
                         # Calculate new Y-offset
                         y_offset = (y_offset + max_y_ext)
                         # Reset X-offset
+                        # TODO: reset the offset using modulo ncols
                         x_offset = 0
 
                     # Write kml footer
@@ -685,7 +658,8 @@ class GarminCustomMap:
                 iface.messageBar().clearWidgets()
                 # Clear statusbar
                 iface.statusBarIface().clearMessage()
-
-                tiles_total = n_tiles - empty_tiles
                 # Give success message
-                iface.messageBar().pushMessage("Done", "Produced {} tiles, with {} rows and {} columns.".format(tiles_total, n_rows, n_cols), level=Qgis.Success, duration=5)
+                tiles_total = n_tiles - empty_tiles
+                iface.messageBar().pushMessage("Done",
+                        "Produced {} tiles, with {} rows and {} columns.".format(tiles_total, n_rows, n_cols),
+                        level=Qgis.Success, duration=5)
