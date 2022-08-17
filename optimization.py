@@ -1,17 +1,25 @@
-#optimization.py
-# (C) 2022 Egor Sanin <egordotsaninatgmaildotcom>
-# For an in-depth discussion of this code and the algorithms visit
-# github.com/esan0/tiling_optimization
+"""optimization.py
+
+(C) 2022 Egor Sanin <egordotsaninatgmaildotcom>
+This local module is used in GarminCustomMap to find an optimized tile size
+based on the following inputs: maximum tile size, maximum allowed number of
+tiles, and the full extent in pixels of the input image.
+For an in-depth discussion of this code and the algorithms visit
+github.com/esan0/tiling_optimization
+"""
+
 import math
 import numpy as np
 from itertools import combinations
 
 def optimize_dtb (x, y, max_tile_size, max_num_tiles):
-    '''
-    Brute force optimization method improved by reducing memory footprint
-    through use of dtypes, as well as reduced processing load through boolean
-    indexing of combination conditions.
-    '''
+    """This method uses brute force to find optimal tiles sizes of a full-extent image.
+
+    This method contains several improvements to a basic brute force approach.
+    We use of dtypes to reduce computational and memory load.
+    We also use boolean indexing to sift out sections of the solution space that
+    fall outside our input parameters.
+    """
 
     # Set up solution space
     W, H = np.meshgrid(np.arange(1,x+1, dtype=np.uint32), np.arange(1,y+1, dtype=np.uint32))
@@ -38,12 +46,13 @@ def optimize_dtb (x, y, max_tile_size, max_num_tiles):
     return (W[opt_tile_size], H[opt_tile_size])
 
 def trial_division(n):
-    '''
+    """This is a trial division factorization implementation.
+
     This trial division factorization algorithm is taken from Wikipedia:
     https://en.wikipedia.org/wiki/Trial_division
     Additional lines added to get a sorted list of all factors of n including
     1 and n.
-    '''
+    """
 
     a = []
     while n % 2 == 0:
@@ -69,11 +78,11 @@ def trial_division(n):
     return b
 
 def optimize_fac (x, y, max_tile_size, max_num_tiles):
-    '''
-    Hybrid factors optimization method for finding solutions with
-    perfect coverage.
-    If perfect coverage comes up empty, call dtb method.
-    '''
+    """This method uses factoring to find optimal tiles sizes of a full-extent image.
+
+    If factorization doesn't result in suitable tile size, then the dtb method
+    is called in order to find an an imperfect solution with trailing pixels.
+    """
 
     #Check if the image extent is smaller than the maximum tile size
     img_ext = x*y
