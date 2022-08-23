@@ -2,7 +2,7 @@
 name=GarminCustomMap
 qgisMinimumVersion=3.0
 description=Export the current map canvas to a Garmin Custom Map (.kmz-file)
-version=3.3
+version=3.4
 author=Stefan Blumentrath - Norwegian Institute for Nature Research (NINA)
 email=stefan.blumentrath@nina.no
 
@@ -16,6 +16,11 @@ repository=https://github.com/NINAnor/GarminCustomMaps/
 
 # Uncomment the following line and add your changelog:
 changelog=
+  Version 3.4
+  - Code refactor by Egor Sanin <egordotsaninatgmaildotcom>
+  - Re-wrote optimization function
+  - Bug fixes to make compatible with QGIS 3.26
+  - Incorporated bug fix for .setFlags (Issue #20) by chrismuller
   Version 3.3
   - Fix max zoom limit (#16)
   Version 3.2
