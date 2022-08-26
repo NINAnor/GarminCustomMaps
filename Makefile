@@ -38,13 +38,13 @@ LOCALES =
 # translation
 SOURCES = \
 	__init__.py \
-	GarminCustomMap.py GarminCustomMap_dialog.py
+	GarminCustomMap.py GarminCustomMap_dialog.py optimization.py
 
 PLUGINNAME = GarminCustomMap
 
 PY_FILES = \
 	__init__.py \
-	GarminCustomMap.py GarminCustomMap_dialog.py
+	GarminCustomMap.py GarminCustomMap_dialog.py optimization.py
 
 UI_FILES = GarminCustomMap_dialog_base.ui
 
