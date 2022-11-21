@@ -381,7 +381,6 @@ class GarminCustomMap:
                 width = round(mapSettings.outputSize().width() * zoom)
                 height = round(mapSettings.outputSize().height() * zoom)
                 mapSettings.setOutputSize(QSize(width, height))
-                mapSettings.setOutputDpi(target_dpi)
                 mapSettings.setExtent(mapRect)
                 mapSettings.setFlags(QgsMapSettings.Flags(QgsMapSettings.Antialiasing | QgsMapSettings.UseAdvancedEffects | QgsMapSettings.ForceVectorOutput | QgsMapSettings.DrawLabeling))
 
