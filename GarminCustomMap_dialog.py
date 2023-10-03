@@ -23,11 +23,12 @@
 
 import os
 
-from PyQt5 import QtGui, uic
+from PyQt5 import uic
 from PyQt5.QtWidgets import QDialog
 
-FORM_CLASS, _ = uic.loadUiType(os.path.join(
-    os.path.dirname(__file__), 'GarminCustomMap_dialog_base.ui'))
+FORM_CLASS, _ = uic.loadUiType(
+    os.path.join(os.path.dirname(__file__), "GarminCustomMap_dialog_base.ui")
+)
 
 
 class GarminCustomMapDialog(QDialog, FORM_CLASS):
