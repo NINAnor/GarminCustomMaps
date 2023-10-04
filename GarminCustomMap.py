@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 /***************************************************************************
  GarminCustomMap
@@ -7,7 +6,8 @@
                               -------------------
         begin                : 2015-09-06
         git sha              : $Format:%H$
-        copyright            : (C) 2015 by Stefan Blumentrath - Norwegian Institute for Nature Research (NINA)
+        copyright            : (C) 2015 by Stefan Blumentrath
+                               Norwegian Institute for Nature Research (NINA)
         email                : stefan.blumentrath@nina.no
  ***************************************************************************/
 
@@ -45,6 +45,7 @@ from .optimization import optimize_fac
 
 
 def dbgMsg(message):
+    """Info logMessage convenience function"""
     QgsMessageLog.logMessage(message, "GarminCustomMap", level=Qgis.Info)
 
 
@@ -66,7 +67,7 @@ class GarminCustomMap:
         # initialize locale
         locale = QSettings().value("locale/userLocale")[0:2]
         locale_path = os.path.join(
-            self.plugin_dir, "i18n", "GarminCustomMap_{}.qm".format(locale)
+            self.plugin_dir, "i18n", f"GarminCustomMap_{locale}.qm"
         )
 
         if os.path.exists(locale_path):
@@ -222,8 +223,10 @@ class GarminCustomMap:
         settings = QSettings()
         lastDir = settings.value("/UI/lastProjectDir")
         fileFilter = "GarminCustomMap files (*.kmz)"
-        # TODO: Getting the file location should be asynchronous and settable in a file field in the UI
-        # TODO: This and the actual processing section should be separated out from the run in another refactor, right now the UI is blocked while we wait for processing
+        # TODO: Getting the file location should be asynchronous and settable
+        # in a file field in the UI
+        # TODO: This and the actual processing section should be separated out
+        # from the run in another refactor, right now the UI is blocked
         out_putFile = QgsEncodingFileDialog(
             None, "Select output file", lastDir, fileFilter
         )
@@ -244,7 +247,7 @@ class GarminCustomMap:
             old_width = mapSettings.outputSize().width()
             old_height = mapSettings.outputSize().height()
             mapSettings.outputDpi()
-            # Reduce clutter of making mapSettings calls and just use the existing variables
+            # Reduce  mapSettings calls: use the existing variables
             width = round(old_width)
             height = round(old_height)
             # Give information about project projection, mapCanvas size and Custom map settings
@@ -327,8 +330,8 @@ class GarminCustomMap:
             <p>
             For more information on size limits and technical details regarding the
             Garmin Custom Maps format see \"About\" tab and/or
-            <a href="https://forums.garmin.com/showthread.php?t=2646">
-            https://forums.garmin.com/showthread.php?t=2646</a>
+            <a href="https://support.garmin.com/en-US/?faq=UcO3cFueS12IwCnizrJjeA">
+            the official docs</a>
             </p></span> """.format(
                     height=height,
                     width=width,
@@ -358,7 +361,8 @@ class GarminCustomMap:
             )
 
             # Show the dialog
-            # TODO: Should be doing this in a separate signal call, connected to the OK button, this way the run method blocks the UI
+            # TODO: Should be doing this in a separate signal call
+            # connected to the OK button, this way the run method blocks the UI
             dlg.show()
             result = dlg.exec_()
             # See if OK was pressed
@@ -374,7 +378,8 @@ class GarminCustomMap:
                 dbg = dlg.flag_dbgMsg.isChecked()
                 # Set options for jpg-production
                 options = []
-                # TODO: add note about image quality to the dialog (values above 95 aren't meaningfully better)
+                # TODO: add note about image quality to the dialog
+                # (values above 95 aren't meaningfully better)
                 # https://gdal.org/drivers/raster/jpeg.html#raster-jpeg
                 # TODO: add value indicator to UI
                 options.append("QUALITY=" + str(qual))
@@ -420,14 +425,14 @@ class GarminCustomMap:
 
                 # Save the image
                 # This is the full size image of the whole extent
-                # It is temporary because later it gets divided into smaller JPGs according to the Garmin Custom Map constraints
-                # TODO: add try:catch to the save operation in case of weird file issues
+                # It is temporary because later it gets divided into smaller JPGs
+                # TODO: catch exceptions
                 if dbg:
                     dbgMsg(f"Initial full-extent render file: {input_file}")
                 image.save(input_file, "png")
 
                 # Set Geotransform and NoData values
-                # TODO: add try:catch to make sure gdal was actually able to open the file
+                # TODO: catch exceptions
                 input_dataset = gdal.Open(input_file)
 
                 # Set Geotransform values
@@ -588,7 +593,7 @@ class GarminCustomMap:
                         duration=5,
                     )
 
-                # Check if size of tiles is below Garmins limit of 1 megapixel (for each tile)
+                # Check if size of tiles is below Garmin's limit of 1 megapixel
                 if (tile_width * tile_height) > max_pix:
                     iface.messageBar().pushMessage(
                         "WARNING",
