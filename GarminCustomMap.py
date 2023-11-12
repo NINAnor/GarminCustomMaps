@@ -30,10 +30,11 @@ from math import sqrt
 from osgeo import gdal, gdalconst
 from PyQt5.QtCore import (QCoreApplication, QSettings, QSize, Qt, QTranslator,
                           qVersion)
-from PyQt5.QtGui import QIcon, QImage, QPainter
+from PyQt5.QtGui import QIcon, QImage, QPainter, qRgb
 from PyQt5.QtWidgets import (QAction, QDialog, QFileDialog, QMessageBox,
                              QProgressBar, QPushButton)
-from qgis.core import (Qgis, QgsCoordinateReferenceSystem, QgsMapSettings,
+from qgis.core import (Qgis, QgsCoordinateReferenceSystem,
+                       QgsMapRendererCustomPainterJob, QgsMapSettings,
                        QgsMessageLog)
 from qgis.gui import QgsEncodingFileDialog
 from qgis.utils import iface
@@ -194,6 +195,8 @@ class GarminCustomMap:
         del self.toolbar
 
     def cleanUp(self):
+        breakpoint()
+
         # TODO: Is this method every actually called?
         # Reset mapSettings
         mapSettings.setOutputSize(QSize(old_width, old_height), old_dpi)
