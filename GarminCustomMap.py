@@ -194,32 +194,6 @@ class GarminCustomMap:
         # remove the toolbar
         del self.toolbar
 
-    def cleanUp(self):
-        breakpoint()
-
-        # TODO: Is this method every actually called?
-        # Reset mapSettings
-        mapSettings.setOutputSize(QSize(old_width, old_height), old_dpi)
-        dbgMsg("\n****\nThe cleanUp method was called.\n****")
-
-        if os.path.exists(out_put + ".png"):
-            os.remove(out_put + ".png")
-
-        if os.path.exists(out_put + ".png.aux.xml"):
-            os.remove(out_put + ".png.aux.xml")
-
-        if os.path.exists(output_geofile):
-            os.remove(output_geofile)
-
-        if os.path.exists(os.path.join(out_folder, "doc.kml")):
-            os.remove(os.path.join(out_folder, "doc.kml"))
-
-        if os.path.exists(os.path.join(out_folder, tile_name)):
-            os.remove(os.path.join(out_folder, tile_name))
-
-        if os.path.exists(out_folder):
-            os.rmdir(out_folder)
-
     def run(self):
         """Run method that performs all the real work"""
         # prepare dialog parameters
