@@ -25,6 +25,7 @@ import os.path
 import tempfile
 import time
 import zipfile
+from io import TextIOWrapper
 from math import sqrt
 
 from osgeo import gdal, gdalconst
@@ -197,6 +198,52 @@ def tile_to_kmz(
     # Add .jpg to .kmz-file and remove it together with its meta-data afterwards
     kmz.write(temp_tile_file, tile_name)
     os.remove(temp_tile_file)
+
+
+def tile_metadata_to_kml(
+    kml: TextIOWrapper,
+    N: float,
+    S: float,
+    E: float,
+    W: float,
+    r: int,
+    c: int,
+    output_base_name: str,
+    draworder: int,
+) -> None:
+    # Write kml-tags for each tile (Name, DrawOrder, JPEG-Reference, GroundOverlay)
+    kml.write("")
+    kml.write("    <GroundOverlay>\n")
+    kml.write(
+        "        <name>"
+        + output_base_name.encode("UTF-8").decode("utf-8")
+        + " Tile "
+        + str(r)
+        + "_"
+        + str(c)
+        + "</name>\n"
+    )  # %{"r":r, "c":c}
+    kml.write(
+        "        <drawOrder>" + str(draworder) + "</drawOrder>\n"
+    )  # %{"draworder":draworder}
+    kml.write("        <Icon>\n")
+    kml.write(
+        "          <href>"
+        + output_base_name.encode("UTF-8").decode("utf-8")
+        + "_"
+        + str(r)
+        + "_"
+        + str(c)
+        + ".jpg</href>\n"
+    )  # %{"r":r, "c":c}
+    kml.write("        </Icon>\n")
+    kml.write("        <LatLonBox>\n")
+    kml.write("          <north>" + str(N) + "</north>\n")
+    kml.write("          <south>" + str(S) + "</south>\n")
+    kml.write("          <east>" + str(E) + "</east>\n")
+    kml.write("          <west>" + str(W) + "</west>\n")
+    kml.write("        </LatLonBox>\n")
+    kml.write("    </GroundOverlay>\n")
 
 
 def produce_tiles(
@@ -466,39 +513,7 @@ def produce_tiles(
                 if dbg_flag:
                     dbgMsg(f"Calculated tile extent: N:{N}, S:{S}, E:{E}, W:{W}")
 
-                # Write kml-tags for each tile (Name, DrawOrder, JPEG-Reference, GroundOverlay)
-                kml.write("")
-                kml.write("    <GroundOverlay>\n")
-                kml.write(
-                    "        <name>"
-                    + output_base_name.encode("UTF-8").decode("utf-8")
-                    + " Tile "
-                    + str(r)
-                    + "_"
-                    + str(c)
-                    + "</name>\n"
-                )  # %{"r":r, "c":c}
-                kml.write(
-                    "        <drawOrder>" + str(draworder) + "</drawOrder>\n"
-                )  # %{"draworder":draworder}
-                kml.write("        <Icon>\n")
-                kml.write(
-                    "          <href>"
-                    + output_base_name.encode("UTF-8").decode("utf-8")
-                    + "_"
-                    + str(r)
-                    + "_"
-                    + str(c)
-                    + ".jpg</href>\n"
-                )  # %{"r":r, "c":c}
-                kml.write("        </Icon>\n")
-                kml.write("        <LatLonBox>\n")
-                kml.write("          <north>" + str(N) + "</north>\n")
-                kml.write("          <south>" + str(S) + "</south>\n")
-                kml.write("          <east>" + str(E) + "</east>\n")
-                kml.write("          <west>" + str(W) + "</west>\n")
-                kml.write("        </LatLonBox>\n")
-                kml.write("    </GroundOverlay>\n")
+                tile_metadata_to_kml(kml, N, S, E, W, r, c, output_base_name, draworder)
 
                 # Calculate new X-offset
                 x_offset = x_offset + tile_width
