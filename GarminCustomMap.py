@@ -149,7 +149,6 @@ def tile_to_kmz(
     tile_width: int,
     x_offset: int,
     y_offset: int,
-    skip_empty: bool,
     full_extent_dataset: Dataset,
     temp_out_folder: str,
     options: list[str],
@@ -171,11 +170,6 @@ def tile_to_kmz(
     t_band_3 = full_extent_dataset.GetRasterBand(3).ReadAsArray(
         x_offset, y_offset, tile_width, tile_height
     )
-
-    # TODO: it doesn't seem like we actually skip anything if this is true.
-    if skip_empty:
-        if t_band_1.min() == 255 and t_band_2.min() == 255 and t_band_3.min() == 255:
-            empty_tiles = empty_tiles + 1
 
     # Write the tile size portion of the indataset to the tile jpg and close bands
     tile.GetRasterBand(1).WriteArray(t_band_1)
@@ -248,7 +242,6 @@ def tile_metadata_to_kml(
 
 def produce_tiles(
     optimize: bool,
-    skip_empty: bool,
     tile_height: int,
     tile_width: int,
     quality: int,
@@ -471,7 +464,6 @@ def produce_tiles(
         # Produce .jpg tiles using gdal_translate looping through the complete rows and columns (1024x1024 pixel)
         y_offset = 0
         x_offset = 0
-        empty_tiles = 0
         tile_width_reset_value = tile_width
         # We reset this to 0 because it's used as the progress indicator in the progress bar
         n_tiles = 0
@@ -498,7 +490,6 @@ def produce_tiles(
                     tile_width,
                     x_offset,
                     y_offset,
-                    skip_empty,
                     full_extent_dataset,
                     temp_out_folder,
                     options,
@@ -558,7 +549,7 @@ def produce_tiles(
     # Clear statusbar
     iface.statusBarIface().clearMessage()
     # Give success message
-    tiles_total = n_tiles - empty_tiles
+    tiles_total = n_tiles
     iface.messageBar().pushMessage(
         "Done",
         f"Produced {tiles_total} tiles, with {n_rows} rows and {n_cols} columns.",
@@ -804,7 +795,6 @@ class GarminCustomMap:
             if result == 1:
                 produce_tiles(
                     optimize=dlg.flag_optimize.isChecked(),
-                    skip_empty=dlg.flag_skip_empty.isChecked(),
                     tile_height=int(dlg.tile_height.value()),
                     tile_width=int(dlg.tile_width.value()),
                     quality=int(dlg.jpg_quality.value()),

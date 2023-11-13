@@ -87,7 +87,7 @@
               <string>Height of each tile in pixels.
 Each tile is limited to 1 megapixel: e.g.  512x2048 pixel.
 The tile size influences the drawing speed on your GPS unit.
-Smaller files are drawn faster, but the number of tiles on 
+Smaller files are drawn faster, but the number of tiles on
 your GPS unit is limied to 100 (across all Custom Maps).</string>
              </property>
              <property name="minimum">
@@ -173,10 +173,10 @@ Smaller files are drawn faster.</string>
             <widget class="QSpinBox" name="draworder">
              <property name="toolTip">
               <string>Draworder settings &gt;= 50 will draw your Custom Map on top of other maps.
-Draworder settings &lt; 50 will draw your Custom Map on top of land, water, 
-and areas on other maps, while roads, topo lines, and contours will be 
+Draworder settings &lt; 50 will draw your Custom Map on top of land, water,
+and areas on other maps, while roads, topo lines, and contours will be
 visible on top of your Custom Map.
-Waypoints, tracks, routes, etc will always be visible on top of 
+Waypoints, tracks, routes, etc will always be visible on top of
 your Custom Map.</string>
              </property>
              <property name="minimum">
@@ -241,16 +241,6 @@ your Custom Map.</string>
             <widget class="QCheckBox" name="flag_optimize">
              <property name="text">
               <string>Optimize tile size automatically</string>
-             </property>
-             <property name="checked">
-              <bool>true</bool>
-             </property>
-            </widget>
-           </item>
-           <item row="16" column="0" colspan="3" alignment="Qt::AlignVCenter">
-            <widget class="QCheckBox" name="flag_skip_empty">
-             <property name="text">
-              <string>Skip production of empty (entirely white) tiles</string>
              </property>
              <property name="checked">
               <bool>true</bool>
