@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 /***************************************************************************
  GarminCustomMap
@@ -6,9 +5,10 @@
  Export the map canvas to a Garmin Custom Map (.kmz-file)
                              -------------------
         begin                : 2015-09-06
-        copyright            : (C) 2015 by Stefan Blumentrath - Norwegian Institute for Nature Research (NINA)
-        email                : stefan.blumentrath@nina.no
         git sha              : $Format:%H$
+        copyright            : (C) 2015 by Stefan Blumentrath
+                               Norwegian Institute for Nature Research (NINA)
+        email                : stefan.blumentrath@nina.no
  ***************************************************************************/
 
 /***************************************************************************
@@ -32,4 +32,5 @@ def classFactory(iface):  # pylint: disable=invalid-name
     """
     #
     from .GarminCustomMap import GarminCustomMap
+
     return GarminCustomMap(iface)
