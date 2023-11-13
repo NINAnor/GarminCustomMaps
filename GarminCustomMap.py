@@ -44,16 +44,85 @@ from .GarminCustomMap_dialog import GarminCustomMapDialog
 # Load optimization functions
 from .optimization import optimize_fac
 
+DIALOG_TEXT = """<span  style=\"font-family='Sans serif'; font-size=11pt; font-weight:400\">
+<p>
+The following information should help you to adjust the settings for your Garmin Custom Map.
+</p>
+
+<p>
+Your current map canvas contains:<br>&bull; {height} rows<br>&bull; {width} columns
+</p>
+
+<p>
+Zooming level 1.0 (map scale of the current map canvas which is 1:{scale})
+will result in {expected_tile_n_unzoomed} (single images within your Garmin Custom Map).
+</p>
+
+<p>
+In general, Garmin Custom Maps are limited to a number of 100 tiles in
+total (across all Garmin Custom Maps on the device).
+A Garmin Custom Map produced with the current Zoom level will occupy {cap100:.1%}
+of the total capacity of most types of Garmin GPS units.
+<br>
+To comply with a limit of 100 tiles, you should use a zoom factor &lt;= {max_zoom_100!r:.5}
+This will result in a scale of your Garmin Custom Map of 1:{scale_zoom_100}.
+</p>
+
+<p>
+However, newer Garmin GPS units (Montana, Oregon 6x0, and GPSMAP 64)
+have a limit of 500 tiles in total (across all Garmin Custom Maps on the device).
+For such GPS units, a Garmin Custom Map produced with the current Zoom level will occupy {cap500:.1%}
+of the maximum possible number of tiles across all Custom Maps on your GPS unit.
+<br>
+To comply with a limit of 500 tiles, you should use a zoom factor &lt;= {max_zoom_500!r:.5}
+This will result in a scale of your Garmin Custom Map of 1:{scale_zoom_500}.
+</p>
+
+<p>
+For more information on size limits and technical details regarding the
+Garmin Custom Maps format see \"About\" tab and/or
+<a href="https://support.garmin.com/en-US/?faq=UcO3cFueS12IwCnizrJjeA">
+the official docs</a>
+</p></span> """
+
 
 def dbgMsg(message):
     """Info logMessage convenience function"""
     QgsMessageLog.logMessage(message, "GarminCustomMap", level=Qgis.Info)
 
 
+def projection_warning(iface: iface):
+    """Projection mismatch warning"""
+    widget = iface.messageBar().createMessage(
+        "WARNING", "Project CRS differs from WGS84 (EPSG: 4326)"
+    )
+    button = QPushButton(widget)
+    button.setText("Info")
+    button.pressed.connect(projection_warning_box)
+    widget.layout().addWidget(button)
+    iface.messageBar().pushWidget(widget, Qgis.Warning, duration=10)
+
+
+def projection_warning_box():
+    """Projection mismatch warning box"""
+    proj_msg = QMessageBox()
+    proj_msg.setWindowTitle("Coordinate Reference System mismatch")
+    proj_msg.setText(
+        "The coordinate reference system (CRS) of your project differs from WGS84 (EPSG: 4326). "
+        "It is likely, that you will produce a better Custom Map "
+        "when your project and data has CRS WGS84!\n"
+        "\n"
+        "The number of rows and columns in the exported image "
+        "will be affected by reprojecting to WGS84 and estimates for "
+        'the number of tiles etc. in the "Setting hints"-Tab will be incorrect!'
+    )
+    proj_msg.exec_()
+
+
 class GarminCustomMap:
     """QGIS Plugin Implementation."""
 
-    def __init__(self, iface):
+    def __init__(self, iface: iface):
         """Constructor.
 
         :param iface: An interface instance that will be passed to this class
@@ -204,15 +273,17 @@ class GarminCustomMap:
         # in a file field in the UI
         # TODO: This and the actual processing section should be separated out
         # from the run in another refactor, right now the UI is blocked
-        out_putFile = QgsEncodingFileDialog(
+        output_file_save_dialog = QgsEncodingFileDialog(
             None, "Select output file", lastDir, fileFilter
         )
-        out_putFile.setDefaultSuffix("kmz")
-        out_putFile.setFileMode(QFileDialog.AnyFile)
-        out_putFile.setAcceptMode(QFileDialog.AcceptSave)
+        output_file_save_dialog.setDefaultSuffix("kmz")
+        output_file_save_dialog.setFileMode(QFileDialog.AnyFile)
+        output_file_save_dialog.setAcceptMode(QFileDialog.AcceptSave)
         # out_putFile.setConfirmOverwrite(True)
-        if out_putFile.exec_() == QDialog.Accepted:
-            kmz_file = out_putFile.selectedFiles()[0]
+
+        # Main logic
+        if output_file_save_dialog.exec_() == QDialog.Accepted:
+            kmz_file = output_file_save_dialog.selectedFiles()[0]
             # Get mapCanvas and mapRenderer variables
             canvas = self.iface.mapCanvas()
             scale = canvas.scale()
@@ -241,75 +312,14 @@ class GarminCustomMap:
             scale_zoom_500 = round(scale / max_zoom_500)
 
             if SourceCRS != "EPSG:4326":
-
-                def projWarning():
-                    proj_msg = QMessageBox()
-                    proj_msg.setWindowTitle("Coordinate Reference System mismatch")
-                    proj_msg.setText(
-                        "The coordinate reference system (CRS) of your project differs from WGS84 (EPSG: 4326). "
-                        "It is likely, that you will produce a better Custom Map "
-                        "when your project and data has CRS WGS84!\n"
-                        "\n"
-                        "The number of rows and columns in the exported image "
-                        "will be affected by reprojecting to WGS84 and estimates for "
-                        'the number of tiles etc. in the "Setting hints"-Tab will be incorrect!'
-                    )
-                    proj_msg.exec_()
-
-                widget = iface.messageBar().createMessage(
-                    "WARNING", "Project CRS differs from WGS84 (EPSG: 4326)"
-                )
-                button = QPushButton(widget)
-                button.setText("Info")
-                button.pressed.connect(projWarning)
-                widget.layout().addWidget(button)
-                iface.messageBar().pushWidget(widget, Qgis.Critical, duration=10)
+                projection_warning(iface)
 
             # create the dialog
             dlg = GarminCustomMapDialog()
 
             # Update the dialog
             dlg.textBrowser.setHtml(
-                """<span  style=\"font-family='Sans serif'; font-size=11pt; font-weight:400\">
-            <p>
-            The following information should help you to adjust the settings for your Garmin Custom Map.
-            </p>
-
-            <p>
-            Your current map canvas contains:<br>&bull; {height} rows<br>&bull; {width} columns
-            </p>
-
-            <p>
-            Zooming level 1.0 (map scale of the current map canvas which is 1:{scale})
-            will result in {expected_tile_n_unzoomed} (single images within your Garmin Custom Map).
-            </p>
-
-            <p>
-            In general, Garmin Custom Maps are limited to a number of 100 tiles in
-            total (across all Garmin Custom Maps on the device).
-            A Garmin Custom Map produced with the current Zoom level will occupy {cap100:.1%}
-            of the total capacity of most types of Garmin GPS units.
-            <br>
-            To comply with a limit of 100 tiles, you should use a zoom factor &lt;= {max_zoom_100!r:.5}
-            This will result in a scale of your Garmin Custom Map of 1:{scale_zoom_100}.
-            </p>
-
-            <p>
-            However, newer Garmin GPS units (Montana, Oregon 6x0, and GPSMAP 64)
-            have a limit of 500 tiles in total (across all Garmin Custom Maps on the device).
-            For such GPS units, a Garmin Custom Map produced with the current Zoom level will occupy {cap500:.1%}
-            of the maximum possible number of tiles across all Custom Maps on your GPS unit.
-            <br>
-            To comply with a limit of 500 tiles, you should use a zoom factor &lt;= {max_zoom_500!r:.5}
-            This will result in a scale of your Garmin Custom Map of 1:{scale_zoom_500}.
-            </p>
-
-            <p>
-            For more information on size limits and technical details regarding the
-            Garmin Custom Maps format see \"About\" tab and/or
-            <a href="https://support.garmin.com/en-US/?faq=UcO3cFueS12IwCnizrJjeA">
-            the official docs</a>
-            </p></span> """.format(
+                DIALOG_TEXT.format(
                     height=height,
                     width=width,
                     scale=round(scale),
