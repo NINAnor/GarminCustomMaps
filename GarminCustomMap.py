@@ -141,6 +141,64 @@ def projection_warning_box():
     proj_msg.exec_()
 
 
+def tile_to_kmz(
+    tile_name: str,
+    kmz: zipfile.ZipFile,
+    tile_height: int,
+    tile_width: int,
+    x_offset: int,
+    y_offset: int,
+    skip_empty: bool,
+    full_extent_dataset: Dataset,
+    temp_out_folder: str,
+    options: list[str],
+) -> None:
+    """Produce time and write to the kmz"""
+    # Set parameters for "gdal_translate"
+    # JPEG-driver has no Create() so we will create an in-memory dataset and then CreateCopy()
+    mem_driver = gdal.GetDriverByName("MEM")
+    mem_driver.Register()
+    tile = mem_driver.Create("", tile_width, tile_height, 3, gdalconst.GDT_Byte)
+
+    # Read a tile size portion of the indataset full extent image
+    t_band_1 = full_extent_dataset.GetRasterBand(1).ReadAsArray(
+        x_offset, y_offset, tile_width, tile_height
+    )
+    t_band_2 = full_extent_dataset.GetRasterBand(2).ReadAsArray(
+        x_offset, y_offset, tile_width, tile_height
+    )
+    t_band_3 = full_extent_dataset.GetRasterBand(3).ReadAsArray(
+        x_offset, y_offset, tile_width, tile_height
+    )
+
+    # TODO: it doesn't seem like we actually skip anything if this is true.
+    if skip_empty:
+        if t_band_1.min() == 255 and t_band_2.min() == 255 and t_band_3.min() == 255:
+            empty_tiles = empty_tiles + 1
+
+    # Write the tile size portion of the indataset to the tile jpg and close bands
+    tile.GetRasterBand(1).WriteArray(t_band_1)
+    tile.GetRasterBand(2).WriteArray(t_band_2)
+    tile.GetRasterBand(3).WriteArray(t_band_3)
+    # Close datasets
+    t_band_1 = None
+    t_band_2 = None
+    t_band_3 = None
+
+    # Translate MEM dataset to JPG
+    jpg_driver = gdal.GetDriverByName("JPEG")
+    jpg_driver.Register()
+    temp_tile_file = os.path.join(temp_out_folder, tile_name)
+    jpg_driver.CreateCopy(temp_tile_file, tile, options=options)
+
+    # Close GDAL datasets
+    tile = None
+
+    # Add .jpg to .kmz-file and remove it together with its meta-data afterwards
+    kmz.write(temp_tile_file, tile_name)
+    os.remove(temp_tile_file)
+
+
 def produce_tiles(
     optimize: bool,
     skip_empty: bool,
@@ -386,60 +444,18 @@ def produce_tiles(
                 tile_name = f"{output_base_name}_{r}_{c}.jpg"
                 if dbg_flag:
                     dbgMsg(f"Producing tile: {tile_name}")
-
-                # Set parameters for "gdal_translate"
-                # JPEG-driver has no Create() so we will create an in-memory dataset and then CreateCopy()
-                mem_driver = gdal.GetDriverByName("MEM")
-                mem_driver.Register()
-                tile = mem_driver.Create(
-                    "", tile_width, tile_height, 3, gdalconst.GDT_Byte
+                tile_to_kmz(
+                    tile_name,
+                    kmz,
+                    tile_height,
+                    tile_width,
+                    x_offset,
+                    y_offset,
+                    skip_empty,
+                    full_extent_dataset,
+                    temp_out_folder,
+                    options,
                 )
-
-                # Read a tile size portion of the indataset full extent image
-                t_band_1 = full_extent_dataset.GetRasterBand(1).ReadAsArray(
-                    x_offset, y_offset, tile_width, tile_height
-                )
-                t_band_2 = full_extent_dataset.GetRasterBand(2).ReadAsArray(
-                    x_offset, y_offset, tile_width, tile_height
-                )
-                t_band_3 = full_extent_dataset.GetRasterBand(3).ReadAsArray(
-                    x_offset, y_offset, tile_width, tile_height
-                )
-
-                # TODO: it doesn't seem like we actually skip anything if this is true.
-                if skip_empty:
-                    if (
-                        t_band_1.min() == 255
-                        and t_band_2.min() == 255
-                        and t_band_3.min() == 255
-                    ):
-                        empty_tiles = empty_tiles + 1
-
-                # Write the tile size portion of the indataset to the tile jpg and close bands
-                tile.GetRasterBand(1).WriteArray(t_band_1)
-                tile.GetRasterBand(2).WriteArray(t_band_2)
-                tile.GetRasterBand(3).WriteArray(t_band_3)
-                # Close datasets
-                t_band_1 = None
-                t_band_2 = None
-                t_band_3 = None
-
-                # Translate MEM dataset to JPG
-                jpg_driver = gdal.GetDriverByName("JPEG")
-                jpg_driver.Register()
-                temp_tile_file = os.path.join(temp_out_folder, tile_name)
-                # Let's add a COMMENT, just for fun
-                options.append(
-                    f'COMMENT="Tile ({r}, {c}) of ({n_rows}, {n_cols}). Produced by GarminCustomMap"'
-                )
-                jpg_driver.CreateCopy(temp_tile_file, tile, options=options)
-
-                # Close GDAL datasets
-                tile = None
-
-                # Add .jpg to .kmz-file and remove it together with its meta-data afterwards
-                kmz.write(temp_tile_file, tile_name)
-                os.remove(temp_tile_file)
 
                 # Next we have to populate the KML with metadata
                 # Calculate tile extent
